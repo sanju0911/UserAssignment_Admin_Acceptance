@@ -1,5 +1,5 @@
 const jwtTool = require("jsonwebtoken");
-const Account = require("../models/User");
+const Account = require("../Models/Usermodel");
 
 const verifyAccess = (allowedRoles = []) => {
   return async (req, res, next) => {

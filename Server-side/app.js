@@ -1,11 +1,10 @@
 const expressServer = require("express");
 const enableCors = require("cors");
 const loadEnv = require("dotenv");
-const initializeDB = require("./config/dbConnection");
-const pathUtil = require("path");
+const initializeDB = require("./Config/Database");
 
-const userEndpoints = require("./routes/userHandlers");
-const adminEndpoints = require("./routes/adminHandlers");
+const userEndpoints = require("./Routes/userRoutes");
+const adminEndpoints = require("./Routes/adminRoutes");
 
 loadEnv.config();
 
@@ -13,15 +12,10 @@ const serverApp = expressServer();
 serverApp.use(enableCors());
 serverApp.use(expressServer.json());
 
-serverApp.use(
-  "/files",
-  expressServer.static(pathUtil.join(__dirname, "uploads"))
-);
-
 serverApp.use("/user", userEndpoints);
 serverApp.use("/admin", adminEndpoints);
 
-const SERVER_PORT = process.env.SERVER_PORT || 5000;
+const SERVER_PORT = process.env.SERVER_PORT || 8000;
 
 serverApp.listen(SERVER_PORT, () => {
   initializeDB();
