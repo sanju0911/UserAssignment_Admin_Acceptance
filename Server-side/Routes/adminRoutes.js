@@ -1,6 +1,6 @@
 const expressApp = require("express");
 const adminRouter = expressApp.Router();
-const verifyToken = require("../middleware/authCheck");
+const verifyToken = require("../Config/auth");
 const {
   registerAdmin,
   loginAdmin,

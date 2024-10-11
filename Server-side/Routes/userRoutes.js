@@ -1,7 +1,7 @@
 const expressServer = require("express");
 const userRouter = expressServer.Router();
 const fileUpload = require("../middleware/uploadFile");
-const verifyUser = require("../middleware/authCheck");
+const verifyUser = require("../Config/auth");
 const {
   userRegistration,
   userLogin,
