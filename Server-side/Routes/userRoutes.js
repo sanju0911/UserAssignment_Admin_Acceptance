@@ -1,20 +1,9 @@
-const expressServer = require("express");
-const userRouter = expressServer.Router();
+const express = require("express");
+const { register, login } = require("../Controllers/userController");
 
-const verifyUser = require("../Config/auth");
-const {
-  userRegistration,
-  userLogin,
-  fetchAdmins,
-  userAssignmentUpload,
-  userAssignments,
-} = require("../Controllers/userController");
+const route = express.Router();
 
-userRouter.post("/register", userRegistration);
-userRouter.post("/login", userLogin);
+route.post("/register", register);
+route.post("/login", login);
 
-userRouter.get("/admins", verifyUser("user"), fetchAdmins);
-
-userRouter.get("/assignments", verifyUser("user"), userAssignments);
-
-module.exports = userRouter;
+module.exports = route;

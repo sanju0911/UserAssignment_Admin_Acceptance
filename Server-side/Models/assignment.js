@@ -1,25 +1,29 @@
-const mongoDB = require("mongoose");
+const mongoose = require("mongoose");
 
-const TaskSchema = new mongoDB.Schema({
-  uploaderId: {
-    type: mongoDB.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
+const assignmentSchema = mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    task: {
+      type: String,
+      required: [true, "Task description is required"],
+    },
+    admin: {
+      type: String,
+      required: [true, "Admin name is required"],
+    },
+    createdAt: {
+      type: Date,
+      default: () => new Date(),
+    },
   },
-  taskDescription: { type: String },
-  fileLink: { type: String },
-  fileTitle: { type: String },
-  assignedAdminId: {
-    type: mongoDB.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  taskStatus: {
-    type: String,
-    enum: ["pending", "approved", "denied"],
-    default: "pending",
-  },
-  submissionDate: { type: Date, default: Date.now },
-});
+  {
+    versionKey: false,
+  }
+);
 
-module.exports = mongoDB.model("Task", TaskSchema);
+const Assignment = mongoose.model("Assignment", assignmentSchema);
+module.exports = Assignment;

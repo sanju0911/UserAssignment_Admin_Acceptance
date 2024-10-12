@@ -1,16 +1,14 @@
 const express = require("express");
 const {
-  registerAdmin,
-  adminLogin,
+  uploadAssignment,
   fetchAssignments,
   acceptAssignment,
   rejectAssignment,
-} = require("../Controllers/adminController");
+} = require("../Controllers/assignmentController");
 
 const route = express.Router();
 
-route.post("/register", registerAdmin);
-route.post("/login", adminLogin);
+route.post("/upload", uploadAssignment);
 route.get("/assignments/:adminId", fetchAssignments);
 route.post("/assignments/:id/accept", acceptAssignment);
 route.post("/assignments/:id/reject", rejectAssignment);

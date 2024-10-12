@@ -1,122 +1,93 @@
-const bcryptTool = require("bcryptjs");
-const jwtTool = require("jsonwebtoken");
-const UserModel = require("../Models/Usermodel");
-const TaskModel = require("../Models/assignment");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const Admin = require("../Models/adminModel.js");
+const Assignment = require("../Models/assignment");
 
-const registerAdmin = async (req, res) => {
-  const { username, password } = req.body;
+exports.registerAdmin = async (req, res) => {
+  const { name, email, password } = req.body;
   try {
-    let existingAdmin = await UserModel.findOne({ username });
-    if (existingAdmin)
-      return res.status(400).json({ message: "Admin already registered" });
-
-    let newAdmin = new UserModel({ username, password, role: "admin" });
-    const saltFactor = await bcryptTool.genSalt(10);
-    newAdmin.password = await bcryptTool.hash(password, saltFactor);
-
-    await newAdmin.save();
-
-    const jwtPayload = { user: { id: newAdmin.id } };
-    jwtTool.sign(
-      jwtPayload,
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
-    );
-  } catch (error) {
-    console.error("Registration Error:", error.message);
-    res.status(500).send("Server error during admin registration");
-  }
-};
-
-const loginAdmin = async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    let adminUser = await UserModel.findOne({ username });
-    if (!adminUser || adminUser.role !== "admin") {
-      return res.status(400).json({ message: "Invalid login credentials" });
-    }
-
-    const passwordCheck = await bcryptTool.compare(
-      password,
-      adminUser.password
-    );
-    if (!passwordCheck)
-      return res.status(400).json({ message: "Invalid login credentials" });
-
-    const jwtPayload = { user: { id: adminUser.id } };
-    jwtTool.sign(
-      jwtPayload,
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
-    );
-  } catch (error) {
-    console.error("Login Error:", error.message);
-    res.status(500).send("Server error during login");
-  }
-};
-
-const getAdminAssignments = async (req, res) => {
-  try {
-    const adminTasks = await TaskModel.find({ adminId: req.user.id })
-      .populate("userId", "username")
-      .sort({ createdAt: -1 });
-    res.json(adminTasks);
-  } catch (error) {
-    console.error("Error fetching assignments:", error.message);
-    res.status(500).send("Error retrieving assignments");
-  }
-};
-
-const approveAssignment = async (req, res) => {
-  try {
-    let taskItem = await TaskModel.findById(req.params.id);
-    if (!taskItem) return res.status(404).json({ message: "Task not found" });
-    if (taskItem.adminId.toString() !== req.user.id) {
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin) {
       return res
-        .status(401)
-        .json({ message: "Not authorized to approve this task" });
+        .status(400)
+        .json({ message: "Admin with this email already exists." });
     }
-
-    taskItem.status = "approved";
-    await taskItem.save();
-    res.json({ message: "Task approved successfully" });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const admin = new Admin({ name, email, password: hashedPassword });
+    const savedAdmin = await admin.save();
+    const token = jwt.sign(
+      { id: savedAdmin._id, role: "admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    res.status(201).json({ token, admin: savedAdmin });
   } catch (error) {
-    console.error("Approval Error:", error.message);
-    res.status(500).send("Server error while approving task");
+    res.status(500).json({ error: "Server encountered an issue." });
   }
 };
 
-const denyAssignment = async (req, res) => {
+exports.adminLogin = async (req, res) => {
+  const { email, password } = req.body;
   try {
-    let taskItem = await TaskModel.findById(req.params.id);
-    if (!taskItem) return res.status(404).json({ message: "Task not found" });
-    if (taskItem.adminId.toString() !== req.user.id) {
-      return res
-        .status(401)
-        .json({ message: "Not authorized to reject this task" });
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found." });
     }
-
-    taskItem.status = "rejected";
-    await taskItem.save();
-    res.json({ message: "Task rejected successfully" });
+    const isPasswordCorrect = await bcrypt.compare(password, admin.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Incorrect password." });
+    }
+    const token = jwt.sign(
+      { id: admin._id, role: "admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    res.status(200).json({ token });
   } catch (error) {
-    console.error("Rejection Error:", error.message);
-    res.status(500).send("Server error while rejecting task");
+    res.status(500).json({ error: "Server encountered an issue." });
   }
 };
 
-module.exports = {
-  registerAdmin,
-  loginAdmin,
-  getAdminAssignments,
-  approveAssignment,
-  denyAssignment,
+exports.fetchAssignments = async (req, res) => {
+  try {
+    const adminId = req.params.adminId;
+    const assignments = await Assignment.find({ admin: adminId });
+    if (assignments.length === 0) {
+      return res.status(404).json({ message: "No assignments found." });
+    }
+    res.status(200).json(assignments);
+  } catch (error) {
+    res.status(500).json({ error: "Server encountered an issue." });
+  }
+};
+
+exports.acceptAssignment = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const assignment = await Assignment.findById(id);
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found." });
+    }
+    assignment.status = "Accepted";
+    const updatedAssignment = await assignment.save();
+    res.status(200).json(updatedAssignment);
+  } catch (error) {
+    res.status(500).json({ error: "Server encountered an issue." });
+  }
+};
+
+exports.rejectAssignment = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const assignment = await Assignment.findById(id);
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found." });
+    }
+    assignment.status = "Rejected";
+    const updatedAssignment = await assignment.save();
+    res.status(200).json(updatedAssignment);
+  } catch (error) {
+    res.status(500).json({ error: "Server encountered an issue." });
+  }
 };

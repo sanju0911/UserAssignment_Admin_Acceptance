@@ -1,23 +1,24 @@
-const expressServer = require("express");
-const enableCors = require("cors");
-const loadEnv = require("dotenv");
-const initializeDB = require("./Config/Database");
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const dotenv = require("dotenv");
+const userRoutes = require("./Routes/userRoutes.js");
+const adminRoutes = require("./Routes/adminRoutes.js");
+const assignmentRoutes = require("./Routes/assignmentRoutes.js");
+const DatabaseConnection = require("./Config/Database.js");
 
-const userEndpoints = require("./Routes/userRoutes");
-const adminEndpoints = require("./Routes/adminRoutes");
+dotenv.config();
 
-loadEnv.config();
+const app = express();
+DatabaseConnection();
+app.use(bodyParser.json());
 
-const serverApp = expressServer();
-serverApp.use(enableCors());
-serverApp.use(expressServer.json());
+const SERVER_PORT = process.env.PORT || 5000;
 
-serverApp.use("/user", userEndpoints);
-serverApp.use("/admin", adminEndpoints);
+app.use("/api/users", userRoutes);
+app.use("/api/admins", adminRoutes);
+app.use("/api/assignments", assignmentRoutes);
 
-const SERVER_PORT = process.env.SERVER_PORT || 8000;
-
-serverApp.listen(SERVER_PORT, () => {
-  initializeDB();
-  console.log(`Application is running on port ${SERVER_PORT}`);
+app.listen(SERVER_PORT, () => {
+  console.log(`Server running on port ${SERVER_PORT}`);
 });
