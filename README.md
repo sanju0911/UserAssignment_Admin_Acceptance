@@ -49,21 +49,3 @@ The **UserAssignment_Admin_Acceptance** project is a task management system that
     ```http
   POST localhost:5000/api/assignments/assignments/id/accept
    POST localhost:5000/api/assignments/assignments/id/reject
-
-
-#######    OUTPUT SCREENS - POSTMAN  ##########
-
-# USER REGISTER 
-c:\Users\Sanju\Desktop\user-register.png
-# USER LOGIN
-![alt text](user-login.png)
-# ADMIN REGISTER
-![alt text](admin-register.png)
-# ADMIN LOGIN
-![alt text](admin-login.png)
-# ASSIGNMENT UPLOAD
-![alt text](assignment-upload.png)
-# ASSIGNMENT ACCEPT
-![alt text](assignment-accept.png)
-# ASSIGNMENT REJECT
-![alt text](assiggment-reject.png)
