@@ -1,43 +1,55 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const Admin = require("../Models/adminModel.js");
+const User = require("../Models/Usermodel");
+const Admin = require("../Models/adminModel");
 const Assignment = require("../Models/assignment");
 
-exports.registerAdmin = async (req, res) => {
+const registerAdmin = async (req, res) => {
   const { name, email, password } = req.body;
+
   try {
-    const existingAdmin = await Admin.findOne({ email });
-    if (existingAdmin) {
-      return res
-        .status(400)
-        .json({ message: "Admin with this email already exists." });
+    const adminExist = await Admin.findOne({ email });
+    if (adminExist) {
+      return res.status(400).json({ message: "Admin already exists." });
     }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const admin = new Admin({ name, email, password: hashedPassword });
-    const savedAdmin = await admin.save();
+
+    const newAdmin = new Admin({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    const savedAdmin = await newAdmin.save();
+
     const token = jwt.sign(
       { id: savedAdmin._id, role: "admin" },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+
     res.status(201).json({ token, admin: savedAdmin });
   } catch (error) {
-    res.status(500).json({ error: "Server encountered an issue." });
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
   }
 };
 
-exports.adminLogin = async (req, res) => {
+const adminLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
     const admin = await Admin.findOne({ email });
     if (!admin) {
       return res.status(404).json({ message: "Admin not found." });
     }
-    const isPasswordCorrect = await bcrypt.compare(password, admin.password);
-    if (!isPasswordCorrect) {
-      return res.status(400).json({ message: "Incorrect password." });
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials." });
     }
+
     const token = jwt.sign(
       { id: admin._id, role: "admin" },
       process.env.JWT_SECRET,
@@ -45,24 +57,25 @@ exports.adminLogin = async (req, res) => {
     );
     res.status(200).json({ token });
   } catch (error) {
-    res.status(500).json({ error: "Server encountered an issue." });
+    res.status(500).json({ error: "Internal Server Error." });
   }
 };
 
-exports.fetchAssignments = async (req, res) => {
+const fetchAssignments = async (req, res) => {
   try {
-    const adminId = req.params.adminId;
+    const adminId = req.admin.id;
     const assignments = await Assignment.find({ admin: adminId });
     if (assignments.length === 0) {
       return res.status(404).json({ message: "No assignments found." });
     }
     res.status(200).json(assignments);
   } catch (error) {
-    res.status(500).json({ error: "Server encountered an issue." });
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
   }
 };
 
-exports.acceptAssignment = async (req, res) => {
+const acceptAssignment = async (req, res) => {
   try {
     const id = req.params.id;
     const assignment = await Assignment.findById(id);
@@ -73,11 +86,12 @@ exports.acceptAssignment = async (req, res) => {
     const updatedAssignment = await assignment.save();
     res.status(200).json(updatedAssignment);
   } catch (error) {
-    res.status(500).json({ error: "Server encountered an issue." });
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
   }
 };
 
-exports.rejectAssignment = async (req, res) => {
+const rejectAssignment = async (req, res) => {
   try {
     const id = req.params.id;
     const assignment = await Assignment.findById(id);
@@ -88,6 +102,15 @@ exports.rejectAssignment = async (req, res) => {
     const updatedAssignment = await assignment.save();
     res.status(200).json(updatedAssignment);
   } catch (error) {
-    res.status(500).json({ error: "Server encountered an issue." });
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
   }
+};
+
+module.exports = {
+  registerAdmin,
+  adminLogin,
+  fetchAssignments,
+  acceptAssignment,
+  rejectAssignment,
 };

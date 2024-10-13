@@ -1,16 +1,17 @@
 const Assignment = require("../Models/assignment");
 
-exports.uploadAssignment = async (req, res) => {
+const uploadAssignment = async (req, res) => {
   try {
     const assignmentData = new Assignment(req.body);
     const savedAssignment = await assignmentData.save();
     res.status(201).json(savedAssignment);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Internal Server Error." });
   }
 };
 
-exports.fetchAssignments = async (req, res) => {
+const fetchAssignments = async (req, res) => {
   try {
     const adminId = req.params.adminId;
     const assignments = await Assignment.find({ admin: adminId });
@@ -23,7 +24,7 @@ exports.fetchAssignments = async (req, res) => {
   }
 };
 
-exports.acceptAssignment = async (req, res) => {
+const acceptAssignment = async (req, res) => {
   try {
     const id = req.params.id;
     const assignment = await Assignment.findById(id);
@@ -38,7 +39,7 @@ exports.acceptAssignment = async (req, res) => {
   }
 };
 
-exports.rejectAssignment = async (req, res) => {
+const rejectAssignment = async (req, res) => {
   try {
     const id = req.params.id;
     const assignment = await Assignment.findById(id);
@@ -51,4 +52,11 @@ exports.rejectAssignment = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error." });
   }
+};
+
+module.exports = {
+  uploadAssignment,
+  fetchAssignments,
+  acceptAssignment,
+  rejectAssignment,
 };
